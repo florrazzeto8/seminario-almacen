@@ -1,0 +1,5 @@
+Django>=5.0,<5.1
+openpyxl>=3.1          # para seed_catalogo (lee el .xlsx de stock)
+
+# Descomentar para usar PostgreSQL en vez de SQLite (ver config/settings.py):
+# psycopg2-binary>=2.9
