@@ -108,4 +108,4 @@ DEFAULT_FROM_EMAIL = "almacen@fabricasantaisabel.example"
 # --- Reglas de negocio configurables --------------------------------------
 # Horas que una reserva de stock se mantiene antes de notificar que venció
 # (8.2 de la Entrega N°2: "si una reserva supera el plazo configurado").
-RESERVA_PLAZO_HORAS = int(os.environ.get("RESERVA_PLAZO_HORAS", "48"))
+RESERVA_PLAZO_HORAS = int(os.environ.get("RESERVA_PLAZO_HORAS", "12"))

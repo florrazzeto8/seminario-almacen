@@ -1,5 +1,5 @@
 """
-catalogo: el catálogo de materiales no productivos del pañol.
+catalogo: el catálogo de materiales no productivos del almacén.
 
 El campo `codigo` coincide con la columna "Material" del export de SAP que
 usamos para la carga inicial (ver catalogo/management/commands/seed_catalogo.py
@@ -14,7 +14,7 @@ class Material(models.Model):
         REPARACION = "REPARACION", "Reparación"
         HERRAMIENTA = "HERRAMIENTA", "Herramienta"
         EPP = "EPP", "Elemento de protección personal"
-        QUIMICO = "QUIMICO", "Consumible / insumo químico"
+        CONSUMIBLE = "CONSUMIBLE", "Consumible"
         OTRO = "OTRO", "Otro"
 
     codigo = models.CharField(max_length=40, unique=True)

@@ -92,6 +92,7 @@ class Solicitud(models.Model):
 class ItemSolicitud(models.Model):
     class Motivo(models.TextChoices):
         REPARACION = "REPARACION", "Reparación"
+        CONSUMIBLE = "CONSUMIBLE", "Consumible"
         HERRAMIENTA = "HERRAMIENTA", "Herramienta"
         EPP = "EPP", "Elemento de protección personal"
         OTRO = "OTRO", "Otro"

@@ -30,7 +30,7 @@ from presupuesto.models import GastoEquipo
 
 from .models import ItemSolicitud, Solicitud
 
-RESERVA_PLAZO_HORAS = getattr(settings, "RESERVA_PLAZO_HORAS", 48)
+RESERVA_PLAZO_HORAS = getattr(settings, "RESERVA_PLAZO_HORAS", 12)
 
 
 # ---------------------------------------------------------------------------

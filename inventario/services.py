@@ -1,7 +1,8 @@
 """
 Funciones de negocio para movimientos "manuales" de inventario: ingreso de
-mercadería y ajustes (incluida la baja de material roto o vencido), ambos
-reservados al Jefe de Unidad de Almacén según la Tabla N°4 de la Entrega N°2.
+mercadería y ajustes (incluida la baja de material roto o vencido). El
+ingreso lo registra cualquier integrante del almacén (RF20); el ajuste queda
+reservado al Jefe de Unidad de Almacén, que es quien lo autoriza (RF21).
 
 Los movimientos que se generan automáticamente por el circuito de
 solicitudes (salida al entregar, devolución, ajuste por faltante) viven en
@@ -15,18 +16,27 @@ from core.models import Perfil
 from .models import Movimiento
 
 
+ROLES_ALMACEN = (Perfil.Rol.OPERARIO_ALMACEN, Perfil.Rol.JEFE_UNIDAD_ALMACEN)
+
+
+def _validar_personal_almacen(usuario):
+    perfil: Perfil = getattr(usuario, "perfil", None)
+    if not perfil or perfil.rol not in ROLES_ALMACEN:
+        raise PermissionDenied("Solo el personal del almacén puede registrar ingresos de material.")
+
+
 def _validar_jefe_unidad_almacen(usuario):
     perfil: Perfil = getattr(usuario, "perfil", None)
     if not perfil or perfil.rol != Perfil.Rol.JEFE_UNIDAD_ALMACEN:
         raise PermissionDenied(
-            "Solo el Jefe de Unidad de Almacén puede registrar ingresos o ajustes de inventario."
+            "Solo el Jefe de Unidad de Almacén puede autorizar ajustes de inventario."
         )
 
 
 @transaction.atomic
 def registrar_ingreso(material, cantidad, usuario, observacion=""):
     """Ingreso de material al almacén (reposición desde Compras, por ejemplo)."""
-    _validar_jefe_unidad_almacen(usuario)
+    _validar_personal_almacen(usuario)
     if cantidad <= 0:
         raise ValidationError("La cantidad de ingreso debe ser positiva.")
 

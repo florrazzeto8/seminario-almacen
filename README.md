@@ -46,7 +46,7 @@ Cada app de Django corresponde a un módulo del backend descrito en 8.3:
 | App             | Qué modela                                                   |
 |------------------|---------------------------------------------------------------|
 | `core`           | Áreas, Equipos, Máquinas y Perfil (rol de cada usuario)       |
-| `catalogo`       | Material (catálogo del pañol)                                 |
+| `catalogo`       | Material (catálogo del almacén)                                 |
 | `inventario`     | Movimiento (historial inmutable de stock)                     |
 | `presupuesto`    | PresupuestoMensual y GastoEquipo                               |
 | `solicitudes`    | Solicitud, ItemSolicitud y **toda la lógica de negocio**      |
@@ -118,7 +118,17 @@ print(solicitud.estado)  # ENTREGADA
   registrar el material por su `codigo`, pero la lectura por hardware/cámara
   es un tema de la interfaz, no del backend.
 
-## 5. Dato sobre los datos de prueba
+## 5. Cómo trabajamos en el repo
+
+- `main` es lo que se muestra: solo entra por pull request.
+- Cada cambio va en una rama `dev/<tema>` (ej. `dev/alineacion-e3`, `dev/interfaz`).
+- Lo que no está en este repo no existe para la entrega.
+- Las migraciones se versionan: después de tocar un modelo, `makemigrations` y commit.
+- Parámetros de negocio: `RESERVA_PLAZO_HORAS` (12 h por defecto, ver `config/settings.py`).
+- `seed_catalogo` asigna un **precio de demostración** a los materiales sin precio para poder
+  mostrar el control presupuestario; con `--sin-precios` se omite.
+
+## 6. Dato sobre los datos de prueba
 
 `seed_catalogo` importa los 1433 materiales reales del Excel de stock que
 nos pasaron. Algunas filas traían cantidad **negativa** en el export de SAP
