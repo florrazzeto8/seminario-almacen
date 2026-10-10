@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% load web_extras %}
+{% block titulo %}Mis solicitudes{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Mis solicitudes</h1>
+  <a class="btn btn-primary" href="{% url 'solicitud_nueva' %}">Nueva solicitud</a>
+</div>
+<div class="card shadow-sm">
+  <table class="table table-hover mb-0">
+    <thead><tr><th>N°</th><th>Fecha</th><th>Ítems</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+    {% for s in solicitudes %}
+      <tr>
+        <td>#{{ s.pk }}{% if s.solicitud_origen_id %} <span class="badge text-bg-light">derivada de #{{ s.solicitud_origen_id }}</span>{% endif %}</td>
+        <td>{{ s.fecha_creacion|date:"d/m/Y H:i" }}</td>
+        <td>{% for it in s.items.all %}{{ it.cantidad_solicitada }} × {{ it.material.descripcion|truncatechars:40 }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+        <td><span class="badge text-bg-{{ s.estado|estado_color }}">{{ s.get_estado_display }}</span></td>
+        <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'solicitud_detalle' s.pk %}">Ver</a></td>
+      </tr>
+    {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Todavía no registraste solicitudes.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

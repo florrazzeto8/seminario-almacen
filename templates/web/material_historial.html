@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titulo %}{{ m.codigo }}{% endblock %}
+{% block contenido %}
+<h1 class="h3 mb-1"><span class="mono">{{ m.codigo }}</span> · {{ m.descripcion }}</h1>
+<p class="text-muted">Ubicación {{ m.calle }}-{{ m.estanteria }}-{{ m.estante }} · existencias <strong>{{ m.stock_actual }}</strong> · reservado {{ m.stock_reservado }} · disponible <strong>{{ m.stock_disponible }}</strong> · punto de reabastecimiento {{ m.punto_reabastecimiento }}</p>
+<div class="card shadow-sm">
+  <div class="card-header">Historial de movimientos</div>
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Fecha</th><th>Tipo</th><th class="text-end">Cantidad</th><th>Usuario</th><th>Solicitud</th><th>Observación</th></tr></thead>
+    <tbody>{% for mv in movimientos %}
+      <tr><td>{{ mv.fecha|date:"d/m/Y H:i" }}</td><td>{{ mv.get_tipo_display }}</td><td class="text-end">{{ mv.cantidad }}</td><td>{{ mv.usuario.get_full_name|default:mv.usuario.username }}</td>
+        <td>{% if mv.item_solicitud %}<a href="{% url 'solicitud_detalle' mv.item_solicitud.solicitud_id %}">#{{ mv.item_solicitud.solicitud_id }}</a>{% endif %}</td><td class="small text-muted">{{ mv.observacion }}</td></tr>
+    {% empty %}<tr><td colspan="6" class="text-center text-muted py-3">Sin movimientos registrados.</td></tr>{% endfor %}</tbody>
+  </table>
+</div>
+<a class="btn btn-link mt-2" href="{% url 'stock' %}">← Volver al stock</a>
+{% endblock %}

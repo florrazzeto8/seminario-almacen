@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% load web_extras %}
+{% block titulo %}Entregar #{{ s.pk }}{% endblock %}
+{% block contenido %}
+<h1 class="h3">Entrega en mostrador · Solicitud #{{ s.pk }}</h1>
+<p class="text-muted">{{ s.solicitante.get_full_name|default:s.solicitante.username }} · equipo {{ s.equipo.nombre }}</p>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header">Material a entregar</div>
+      <table class="table mb-0"><thead><tr><th>Código</th><th>Material</th><th class="text-end">Cantidad</th><th class="text-end">Precio</th></tr></thead>
+        <tbody>{% for it in items %}<tr><td class="mono">{{ it.material.codigo }}</td><td>{{ it.material.descripcion }}</td><td class="text-end">{{ it.cantidad_reservada }}</td><td class="text-end">{{ it.material.precio_vigente|pesos }}</td></tr>{% endfor %}</tbody></table>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <form method="post" class="card shadow-sm border-success">{% csrf_token %}
+      <div class="card-header">Quién retira</div>
+      <div class="card-body">
+        <div class="mb-3"><label class="form-label">Legajo</label><input name="legajo" class="form-control form-control-lg" value="{{ legajo_sugerido }}" required autofocus></div>
+        <div class="mb-3"><label class="form-label">Nombre</label><input name="nombre" class="form-control" value="{{ nombre_sugerido }}"></div>
+        <p class="small text-muted">Al confirmar, el sistema descuenta el stock, libera la reserva e imputa el gasto al presupuesto del equipo al precio vigente.</p>
+        <button class="btn btn-success btn-lg w-100">Confirmar entrega</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -61,6 +61,8 @@ class Solicitud(models.Model):
         related_name="solicitudes_entregadas",
     )
     fecha_entrega = models.DateTimeField(null=True, blank=True)
+    motivo_rechazo = models.CharField(max_length=255, blank=True)
+    motivo_cancelacion = models.CharField(max_length=255, blank=True)
     # Quien retira físicamente el material puede no ser el solicitante
     # original (lo anota el operario de almacén en el mostrador, 8.2).
     legajo_retira = models.CharField(max_length=20, blank=True)

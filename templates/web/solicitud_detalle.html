@@ -1,0 +1,87 @@
+{% extends "base.html" %}{% load web_extras %}
+{% block titulo %}Solicitud #{{ s.pk }}{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="h3 mb-1">Solicitud #{{ s.pk }} <span class="badge text-bg-{{ s.estado|estado_color }} align-middle">{{ s.get_estado_display }}</span></h1>
+    <p class="text-muted mb-0">{{ s.solicitante.get_full_name|default:s.solicitante.username }} · equipo {{ s.equipo.nombre }} · {{ s.fecha_creacion|date:"d/m/Y H:i" }}
+      {% if s.solicitud_origen_id %} · derivada de <a href="{% url 'solicitud_detalle' s.solicitud_origen_id %}">#{{ s.solicitud_origen_id }}</a>{% endif %}</p>
+  </div>
+  <div class="text-end">
+    {% if es_almacen and s.estado == "APROBADA" %}<form method="post" action="{% url 'solicitud_tomar' s.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-warning">Tomar en preparación</button></form>{% endif %}
+    {% if es_almacen and s.estado == "EN_PREPARACION" %}<form method="post" action="{% url 'solicitud_lista' s.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-info">Marcar lista para retirar</button></form>{% endif %}
+    {% if es_almacen and s.estado == "LISTA_PARA_RETIRAR" %}<a class="btn btn-success" href="{% url 'solicitud_entregar' s.pk %}">Registrar entrega</a>{% endif %}
+    {% if puede_aprobar %}<a class="btn btn-primary" href="{% url 'bandeja' %}">Ir a la bandeja para aprobar</a>{% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header">Ítems</div>
+      <table class="table tabla-items mb-0">
+        <thead><tr><th>Material</th><th class="text-end">Pedido</th><th class="text-end">Reservado</th><th class="text-end">Entregado</th><th>Motivo</th><th>Estado</th>{% if es_almacen %}<th>Ubicación</th><th></th>{% endif %}</tr></thead>
+        <tbody>
+        {% for it in items %}
+          <tr>
+            <td><span class="mono">{{ it.material.codigo }}</span><br>{{ it.material.descripcion }}{% if it.maquina %}<br><small class="text-muted">Máquina: {{ it.maquina.codigo }} {{ it.maquina.nombre }}</small>{% endif %}</td>
+            <td class="text-end">{{ it.cantidad_solicitada }}</td>
+            <td class="text-end">{{ it.cantidad_reservada }}</td>
+            <td class="text-end">{{ it.cantidad_entregada }}{% if it.cantidad_devuelta %}<br><small class="text-muted">dev. {{ it.cantidad_devuelta }}</small>{% endif %}</td>
+            <td>{{ it.get_motivo_display }}</td>
+            <td><span class="badge text-bg-light border">{{ it.get_estado_item_display }}</span></td>
+            {% if es_almacen %}
+            <td class="mono small">{{ it.material.calle }}-{{ it.material.estanteria }}-{{ it.material.estante }}</td>
+            <td class="text-end" style="min-width:260px">
+              {% if s.estado == "EN_PREPARACION" and it.estado_item == "RESERVADO" %}
+              <form method="post" action="{% url 'item_faltante' it.pk %}" class="d-flex gap-1 justify-content-end">{% csrf_token %}
+                <input name="sustituto" class="form-control form-control-sm" placeholder="Cód. sustituto (opcional)" style="max-width:170px">
+                <button class="btn btn-sm btn-outline-danger">Faltante</button>
+              </form>
+              {% elif s.estado == "ENTREGADA" and it.cantidad_pendiente_devolucion > 0 %}
+              <form method="post" action="{% url 'item_devolver' it.pk %}" class="d-flex gap-1 justify-content-end">{% csrf_token %}
+                <input name="cantidad" type="number" min="1" max="{{ it.cantidad_pendiente_devolucion }}" value="1" class="form-control form-control-sm" style="max-width:70px">
+                <input name="motivo" class="form-control form-control-sm" placeholder="Motivo" required style="max-width:140px">
+                <button class="btn btn-sm btn-outline-secondary">Devolver</button>
+              </form>
+              {% endif %}
+            </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if derivadas %}<p class="mt-3 mb-0 text-muted">Solicitudes derivadas: {% for d in derivadas %}<a href="{% url 'solicitud_detalle' d.pk %}">#{{ d.pk }}</a> ({{ d.get_estado_display }}){% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+  </div>
+  <div class="col-lg-4">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header">Trazabilidad</div>
+      <ul class="list-group list-group-flush small">
+        <li class="list-group-item">Solicitó <strong>{{ s.solicitante.get_full_name|default:s.solicitante.username }}</strong> · {{ s.fecha_creacion|date:"d/m H:i" }}</li>
+        {% if s.aprobado_por %}<li class="list-group-item">{% if s.estado == "RECHAZADA" %}Rechazó{% else %}Aprobó{% endif %} <strong>{{ s.aprobado_por.get_full_name|default:s.aprobado_por.username }}</strong> · {{ s.fecha_aprobacion|date:"d/m H:i" }}{% if s.motivo_rechazo %}<br><em>{{ s.motivo_rechazo }}</em>{% endif %}</li>{% endif %}
+        {% if s.preparado_por %}<li class="list-group-item">Preparó <strong>{{ s.preparado_por.get_full_name|default:s.preparado_por.username }}</strong></li>{% endif %}
+        {% if s.entregado_por %}<li class="list-group-item">Entregó <strong>{{ s.entregado_por.get_full_name|default:s.entregado_por.username }}</strong> · {{ s.fecha_entrega|date:"d/m H:i" }}<br>Retiró legajo <strong>{{ s.legajo_retira }}</strong>{% if s.nombre_retira %} ({{ s.nombre_retira }}){% endif %}</li>{% endif %}
+        {% if s.estado == "CANCELADA" %}<li class="list-group-item">Cancelada{% if s.motivo_cancelacion %}: <em>{{ s.motivo_cancelacion }}</em>{% endif %}</li>{% endif %}
+        {% if s.reserva_vence and s.esta_abierta and s.estado != "CREADA" %}<li class="list-group-item">Plazo de retiro hasta {{ s.reserva_vence|date:"d/m H:i" }}</li>{% endif %}
+      </ul>
+    </div>
+    <div class="card shadow-sm mb-3">
+      <div class="card-header">Presupuesto del equipo</div>
+      <div class="card-body small">
+        <p class="mb-1">Costo estimado de la solicitud: <strong>{{ costo|pesos }}</strong></p>
+        {% if presupuesto %}<p class="mb-0">Saldo del mes: <strong class="{% if costo > presupuesto.saldo %}text-danger{% endif %}">{{ presupuesto.saldo|pesos }}</strong> de {{ presupuesto.monto_asignado|pesos }}</p>{% else %}<p class="mb-0 text-muted">Sin presupuesto cargado para este mes.</p>{% endif %}
+      </div>
+    </div>
+    {% if puede_cancelar %}
+    <form method="post" action="{% url 'solicitud_cancelar' s.pk %}" class="card shadow-sm border-danger">{% csrf_token %}
+      <div class="card-body">
+        <label class="form-label small">Cancelar la solicitud (libera las reservas)</label>
+        <input name="motivo" class="form-control form-control-sm mb-2" placeholder="Motivo" required>
+        <button class="btn btn-outline-danger btn-sm w-100" onclick="return confirm('¿Cancelar la solicitud #{{ s.pk }}?')">Cancelar solicitud</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

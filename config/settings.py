@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "inventario",
     "presupuesto",
     "solicitudes",
+    "web",
     "notificaciones",
 ]
 
@@ -54,6 +55,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "web.context_processors.avisos_pendientes",
             ],
         },
     },
@@ -97,6 +99,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "inicio"
+LOGOUT_REDIRECT_URL = "login"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- Email (avisos a Compras) ---------------------------------------------

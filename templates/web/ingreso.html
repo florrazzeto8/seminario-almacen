@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titulo %}Ingresos y ajustes{% endblock %}
+{% block contenido %}
+<h1 class="h3 mb-3">Ingresos de material y ajustes de inventario</h1>
+<div class="row"><div class="col-lg-6">
+<form method="post" class="card shadow-sm">{% csrf_token %}
+  <div class="card-body">
+    <div class="mb-3"><label class="form-label">Tipo de movimiento</label>
+      <select name="tipo" class="form-select">
+        <option value="ingreso">Ingreso de material (reposición)</option>
+        {% if es_jefe %}<option value="ajuste_pos">Ajuste positivo de inventario</option><option value="ajuste_neg">Ajuste negativo (baja por rotura, vencimiento o faltante)</option>{% endif %}
+      </select>
+      {% if not es_jefe %}<div class="form-text">Los ajustes de inventario los autoriza el jefe de unidad de almacén.</div>{% endif %}
+    </div>
+    <div class="mb-3"><label class="form-label">Código del material</label><input name="codigo" class="form-control" placeholder="Leer código de barras o escribir el código" required autofocus></div>
+    <div class="mb-3"><label class="form-label">Cantidad</label><input name="cantidad" type="number" min="1" class="form-control" required></div>
+    <div class="mb-3"><label class="form-label">Observación <small class="text-muted">(obligatoria en ajustes)</small></label><input name="observacion" class="form-control"></div>
+    <button class="btn btn-primary">Registrar</button>
+  </div>
+</form>
+</div></div>
+{% endblock %}

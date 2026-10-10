@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Stock{% endblock %}
+{% block contenido %}
+<h1 class="h3 mb-3">Stock del almacén</h1>
+<form class="mb-3" method="get"><input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Buscar por código o descripción…" autofocus></form>
+<div class="card shadow-sm">
+<table class="table table-sm table-hover mb-0">
+  <thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>Ubicación</th><th class="text-end">Existencias</th><th class="text-end">Reservado</th><th class="text-end">Disponible</th><th class="text-end">Punto reab.</th><th></th></tr></thead>
+  <tbody>{% for m in materiales %}
+    <tr class="{% if m.stock_critico %}table-warning{% endif %}">
+      <td class="mono">{{ m.codigo }}</td><td>{{ m.descripcion }}</td><td class="small">{{ m.get_categoria_display }}</td>
+      <td class="mono small">{{ m.calle }}-{{ m.estanteria }}-{{ m.estante }}</td>
+      <td class="text-end">{{ m.stock_actual }}</td><td class="text-end">{{ m.stock_reservado }}</td><td class="text-end"><strong>{{ m.stock_disponible }}</strong></td><td class="text-end">{{ m.punto_reabastecimiento }}</td>
+      <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="{% url 'material_historial' m.pk %}">Historial</a></td>
+    </tr>
+  {% empty %}<tr><td colspan="9" class="text-center text-muted py-4">Sin resultados.</td></tr>{% endfor %}</tbody>
+</table>
+</div>
+<p class="text-muted small mt-2">Se muestran hasta 100 materiales. Las filas resaltadas están en o por debajo de su punto de reabastecimiento.</p>
+{% endblock %}

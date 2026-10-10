@@ -130,7 +130,7 @@ def aprobar_solicitud(solicitud: Solicitud, usuario):
 
 
 @transaction.atomic
-def rechazar_solicitud(solicitud: Solicitud, usuario):
+def rechazar_solicitud(solicitud: Solicitud, usuario, motivo=""):
     perfil = _perfil(usuario)
     if not perfil.puede_aprobar_para(solicitud.equipo):
         raise PermissionDenied("Este usuario no puede rechazar solicitudes de este equipo.")
@@ -140,7 +140,8 @@ def rechazar_solicitud(solicitud: Solicitud, usuario):
     solicitud.estado = Solicitud.Estado.RECHAZADA
     solicitud.aprobado_por = usuario
     solicitud.fecha_aprobacion = timezone.now()
-    solicitud.save(update_fields=["estado", "aprobado_por", "fecha_aprobacion"])
+    solicitud.motivo_rechazo = motivo
+    solicitud.save(update_fields=["estado", "aprobado_por", "fecha_aprobacion", "motivo_rechazo"])
 
     notificar(
         solicitud.solicitante, Notificacion.Tipo.SOLICITUD_RECHAZADA,
@@ -332,7 +333,7 @@ def registrar_devolucion(item: ItemSolicitud, cantidad, motivo, usuario):
 # ---------------------------------------------------------------------------
 
 @transaction.atomic
-def cancelar_solicitud(solicitud: Solicitud, usuario):
+def cancelar_solicitud(solicitud: Solicitud, usuario, motivo=""):
     perfil = _perfil(usuario)
     es_titular = solicitud.solicitante_id == usuario.id
     puede_por_rol = perfil.rol in (Perfil.Rol.OPERARIO_ALMACEN, Perfil.Rol.JEFE_UNIDAD_ALMACEN) or (
@@ -355,7 +356,8 @@ def cancelar_solicitud(solicitud: Solicitud, usuario):
         item.save(update_fields=["cantidad_reservada", "estado_item"])
 
     solicitud.estado = Solicitud.Estado.CANCELADA
-    solicitud.save(update_fields=["estado"])
+    solicitud.motivo_cancelacion = motivo
+    solicitud.save(update_fields=["estado", "motivo_cancelacion"])
     return solicitud
 
 

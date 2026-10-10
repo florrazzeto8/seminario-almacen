@@ -1,0 +1,22 @@
+{% if q|length < 2 %}<p class="text-muted small mb-0">Escribí al menos dos caracteres del código o la descripción.</p>
+{% elif not materiales %}<p class="text-muted small mb-0">No se encontraron materiales para “{{ q }}”.</p>
+{% else %}
+<table class="table table-sm table-hover mb-0">
+  <thead><tr><th>Código</th><th>Descripción</th><th class="text-end">Disponible</th>{% if ver_ubicacion %}<th>Ubicación</th>{% endif %}<th></th></tr></thead>
+  <tbody>
+  {% for m in materiales %}
+    <tr>
+      <td class="mono">{{ m.codigo }}</td>
+      <td>{{ m.descripcion }}</td>
+      <td class="text-end">{% if m.stock_disponible > 0 %}<span class="badge text-bg-success">{{ m.stock_disponible }}</span>{% else %}<span class="badge text-bg-danger">0</span>{% endif %} <small class="text-muted">{{ m.unidad_medida }}</small></td>
+      {% if ver_ubicacion %}<td class="mono small">{{ m.calle }}-{{ m.estanteria }}-{{ m.estante }}</td>{% endif %}
+      <td class="text-end">
+        {% if modo == "solicitud" %}
+        <button type="button" class="btn btn-sm btn-outline-primary" hx-get="{% url 'material_fila' m.pk %}" hx-target="#items" hx-swap="beforeend">Agregar</button>
+        {% else %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'material_historial' m.pk %}">Historial</a>{% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}

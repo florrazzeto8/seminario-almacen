@@ -39,6 +39,26 @@ Por defecto usa **SQLite** (cero configuración). Para usar PostgreSQL, como
 está definido en la Entrega N°2, ver el bloque comentado en
 `config/settings.py` e instalar `psycopg2-binary`.
 
+## 1b. Interfaz web
+
+Con el servidor levantado, entrar a `http://127.0.0.1:8000/` con cualquiera de los
+usuarios del seed (contraseña `almacen123`). Cada rol ve sus pantallas:
+
+| Usuario | Rol | Pantallas |
+|---|---|---|
+| `operario_mant` | Solicitante | Nueva solicitud, Mis solicitudes (seguimiento, cancelar) |
+| `ju_mant` | Jefe de unidad | Lo anterior + Bandeja de aprobación con saldo del equipo |
+| `jt_mant`, `gerente_mant` | Jefe de taller / Gerente | Bandeja (reemplazo jerárquico) |
+| `operario_almacen1` | Operario de almacén | Tablero (tomar, lista, entregar con legajo, faltante), Stock, Ingresos, devoluciones |
+| `ju_almacen` | Jefe de unidad de almacén | Lo anterior + ajustes de inventario |
+
+Para que la bandeja muestre saldo, cargar un `PresupuestoMensual` del mes para el equipo
+desde el admin (`/admin/presupuesto/presupuestomensual/`).
+
+La interfaz usa plantillas de Django + Bootstrap 5 + HTMX (cargados desde CDN en el
+prototipo; en la red interna de la planta se sirven como archivos locales). Las vistas
+(`web/views.py`) no contienen reglas de negocio: llaman a `services.py`.
+
 ## 2. Cómo está organizado el código
 
 Cada app de Django corresponde a un módulo del backend descrito en 8.3:

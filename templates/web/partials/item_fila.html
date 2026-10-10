@@ -1,0 +1,17 @@
+<tr>
+  <td class="mono">{{ material.codigo }}<input type="hidden" name="material" value="{{ material.pk }}"></td>
+  <td>{{ material.descripcion }}<br><small class="text-muted">Disponible: {{ material.stock_disponible }} {{ material.unidad_medida }}</small></td>
+  <td style="width:110px"><input type="number" name="cantidad" class="form-control form-control-sm" min="1" value="1" required></td>
+  <td style="width:220px">
+    <select name="motivo" class="form-select form-select-sm" onchange="this.closest('tr').querySelector('[name=maquina]').classList.toggle('invisible', this.value !== 'REPARACION')">
+      {% for valor, etiqueta in motivos %}<option value="{{ valor }}" {% if valor == material.categoria %}selected{% endif %}>{{ etiqueta }}</option>{% endfor %}
+    </select>
+  </td>
+  <td style="width:240px">
+    <select name="maquina" class="form-select form-select-sm {% if material.categoria != "REPARACION" %}invisible{% endif %}">
+      <option value="">— Máquina de destino —</option>
+      {% for mq in maquinas %}<option value="{{ mq.pk }}">{{ mq.codigo }} · {{ mq.nombre }}</option>{% endfor %}
+    </select>
+  </td>
+  <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">Quitar</button></td>
+</tr>

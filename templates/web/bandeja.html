@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% load web_extras %}
+{% block titulo %}Bandeja de aprobación{% endblock %}
+{% block contenido %}
+<h1 class="h3 mb-1">Bandeja de aprobación</h1>
+<p class="text-muted">Solicitudes pendientes de {% for e, p in equipos %}<strong>{{ e.nombre }}</strong>{% if p %} (saldo del mes {{ p.saldo|pesos }}){% else %} (sin presupuesto cargado){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+
+{% for f in filas %}
+<div class="card shadow-sm mb-3 {% if f.excede %}border-warning{% endif %}">
+  <div class="card-body">
+    <div class="d-flex justify-content-between flex-wrap gap-3">
+      <div class="flex-grow-1">
+        <h2 class="h5 mb-1"><a href="{% url 'solicitud_detalle' f.s.pk %}" class="text-decoration-none">Solicitud #{{ f.s.pk }}</a>{% if f.s.solicitud_origen_id %} <span class="badge text-bg-light border">derivada de #{{ f.s.solicitud_origen_id }}</span>{% endif %}</h2>
+        <p class="text-muted small mb-2">{{ f.s.solicitante.get_full_name|default:f.s.solicitante.username }} · {{ f.s.equipo.nombre }} · {{ f.s.fecha_creacion|date:"d/m/Y H:i" }}</p>
+        <ul class="mb-2">
+          {% for it in f.s.items.all %}<li>{{ it.cantidad_solicitada }} × {{ it.material.descripcion }} <small class="text-muted">({{ it.get_motivo_display }}{% if it.maquina %}, {{ it.maquina.codigo }}{% endif %} · disponible {{ it.material.stock_disponible }})</small></li>{% endfor %}
+        </ul>
+        <p class="mb-0">Costo estimado <strong>{{ f.costo|pesos }}</strong>
+          {% if f.presupuesto %} · saldo del equipo <strong class="{% if f.excede %}text-danger{% endif %}">{{ f.presupuesto.saldo|pesos }}</strong>{% endif %}
+          {% if f.excede %}<span class="badge text-bg-warning ms-2">Supera el saldo disponible</span>{% endif %}</p>
+      </div>
+      <div style="min-width:280px">
+        <form method="post" action="{% url 'solicitud_aprobar' f.s.pk %}" class="mb-2">{% csrf_token %}<button class="btn btn-success w-100">Aprobar y reservar stock</button></form>
+        <form method="post" action="{% url 'solicitud_rechazar' f.s.pk %}" class="d-flex gap-1">{% csrf_token %}
+          <input name="motivo" class="form-control" placeholder="Motivo del rechazo" required>
+          <button class="btn btn-outline-danger">Rechazar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% empty %}<div class="alert alert-light border">No hay solicitudes pendientes de aprobación.</div>{% endfor %}
+
+{% if resueltas %}
+<h2 class="h5 mt-4">Últimas resueltas</h2>
+<table class="table table-sm">
+  <tbody>{% for s in resueltas %}<tr><td><a href="{% url 'solicitud_detalle' s.pk %}">#{{ s.pk }}</a></td><td>{{ s.solicitante.get_full_name|default:s.solicitante.username }}</td><td>{{ s.equipo.nombre }}</td><td><span class="badge text-bg-{{ s.estado|estado_color }}">{{ s.get_estado_display }}</span></td><td class="text-muted">{{ s.fecha_creacion|date:"d/m H:i" }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endif %}
+{% endblock %}

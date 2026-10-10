@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titulo %}Avisos{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Avisos <span class="badge text-bg-primary">{{ pendientes }} sin leer</span></h1>
+  {% if pendientes %}<form method="post">{% csrf_token %}<button class="btn btn-outline-secondary btn-sm">Marcar todos como leídos</button></form>{% endif %}
+</div>
+<div class="list-group shadow-sm">
+  {% for a in avisos %}
+  <a class="list-group-item list-group-item-action {% if not a.leida %}fw-semibold{% endif %}" href="{% if a.solicitud_id %}{% url 'solicitud_detalle' a.solicitud_id %}{% else %}#{% endif %}">
+    <div class="d-flex justify-content-between"><span>{{ a.mensaje }}</span><small class="text-muted">{{ a.fecha|date:"d/m H:i" }}</small></div>
+    <small class="text-muted">{{ a.get_tipo_display }}</small>
+  </a>
+  {% empty %}<div class="list-group-item text-muted text-center py-4">No tenés avisos.</div>{% endfor %}
+</div>
+{% endblock %}
