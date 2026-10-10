@@ -9,7 +9,7 @@ from functools import wraps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db.models import Q
+from django.db.models import F, Q
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -19,6 +19,7 @@ from catalogo.models import Material
 from core.models import Equipo, Maquina, Perfil
 from inventario import services as inventario
 from notificaciones.models import Notificacion
+from presupuesto import services as presupuesto_srv
 from presupuesto.models import PresupuestoMensual
 from solicitudes import services
 from solicitudes.models import ItemSolicitud, Solicitud
@@ -109,13 +110,45 @@ def inicio(request):
             return redirect("/admin/")
         messages.error(request, "Tu usuario no tiene un perfil de negocio asociado. Contactá al administrador.")
         return redirect("logout")
-    if perfil.rol in ROLES_ALMACEN:
-        return redirect("tablero")
-    if perfil.rol in (Rol.JEFE_TALLER, Rol.GERENTE):
-        return redirect("bandeja")
     if perfil.rol == Rol.ADMIN:
         return redirect("/admin/")
-    return redirect("mis_solicitudes")
+
+    hoy = timezone.localdate()
+    ctx = {"perfil": perfil, "hoy": hoy}
+    if perfil.rol in ROLES_ALMACEN:
+        abiertas = Solicitud.objects.filter(estado__in=(
+            Solicitud.Estado.APROBADA, Solicitud.Estado.EN_PREPARACION, Solicitud.Estado.LISTA_PARA_RETIRAR))
+        ctx.update({
+            "plantilla": "web/inicio_almacen.html",
+            "aprobadas": abiertas.filter(estado=Solicitud.Estado.APROBADA).count(),
+            "en_preparacion": abiertas.filter(estado=Solicitud.Estado.EN_PREPARACION).count(),
+            "listas": abiertas.filter(estado=Solicitud.Estado.LISTA_PARA_RETIRAR).count(),
+            "vencidas": abiertas.filter(reserva_vence__lt=timezone.now()).count(),
+            "entregadas_hoy": Solicitud.objects.filter(estado=Solicitud.Estado.ENTREGADA, fecha_entrega__date=hoy).count(),
+            "criticos": [m for m in Material.objects.filter(activo=True, stock_actual__lte=F("punto_reabastecimiento")).order_by("descripcion")[:8]],
+            "sin_presupuesto": Equipo.objects.filter(activo=True).exclude(
+                presupuestos__anio=hoy.year, presupuestos__mes=hoy.month).exclude(nombre__iexact="Almacén").count(),
+        })
+    elif perfil.rol in (Rol.JEFE_TALLER, Rol.GERENTE):
+        equipos = _equipos_que_aprueba(perfil)
+        ctx.update({
+            "plantilla": "web/inicio_jefe.html",
+            "pendientes": Solicitud.objects.filter(estado=Solicitud.Estado.CREADA, equipo__in=equipos)
+                .select_related("solicitante", "equipo").order_by("fecha_creacion")[:8],
+            "equipos": [(e, _saldo_equipo(e)) for e in equipos],
+        })
+    else:  # Solicitante o Jefe de unidad
+        mias = Solicitud.objects.filter(solicitante=request.user).select_related("equipo").prefetch_related("items__material")
+        ctx.update({
+            "plantilla": "web/inicio_solicitante.html",
+            "abiertas": mias.filter(estado__in=Solicitud.ESTADOS_ABIERTOS)[:8],
+            "ultimas": mias.filter(estado__in=Solicitud.ESTADOS_CERRADOS)[:5],
+            "presupuesto": _saldo_equipo(perfil.equipo) if perfil.equipo_id else None,
+        })
+        if perfil.rol == Rol.JEFE_UNIDAD:
+            ctx["pendientes"] = Solicitud.objects.filter(
+                estado=Solicitud.Estado.CREADA, equipo=perfil.equipo).select_related("solicitante").order_by("fecha_creacion")[:8]
+    return render(request, ctx["plantilla"], ctx)
 
 
 @login_required
@@ -326,9 +359,10 @@ def tablero(request):
     entregadas_hoy = Solicitud.objects.filter(
         estado=Solicitud.Estado.ENTREGADA, fecha_entrega__date=timezone.localdate()
     ).count()
-    return render(request, "web/tablero.html", {
-        "columnas": columnas, "entregadas_hoy": entregadas_hoy, "ahora": timezone.now(),
-    })
+    ctx = {"columnas": columnas, "entregadas_hoy": entregadas_hoy, "ahora": timezone.now()}
+    if request.GET.get("parcial") or request.headers.get("HX-Request"):
+        return render(request, "web/partials/tablero_columnas.html", ctx)
+    return render(request, "web/tablero.html", ctx)
 
 
 @require_POST
@@ -438,3 +472,54 @@ def ingreso(request):
         return redirect("material_historial", pk=material.pk)
     perfil = _perfil(request)
     return render(request, "web/ingreso.html", {"es_jefe": perfil.rol == Rol.JEFE_UNIDAD_ALMACEN})
+
+
+# ---------------------------------------------------------------------------
+# RF25 / RF28 Presupuesto mensual y consulta de gasto
+# ---------------------------------------------------------------------------
+
+@rol_requerido(Rol.JEFE_UNIDAD_ALMACEN)
+def presupuestos(request):
+    hoy = timezone.localdate()
+    if request.method == "POST":
+        equipo = get_object_or_404(Equipo, pk=request.POST.get("equipo"))
+        resultado = _ejecutar(
+            request,
+            lambda: presupuesto_srv.cargar_presupuesto(
+                equipo, request.POST.get("anio"), request.POST.get("mes"), request.POST.get("monto"), request.user),
+            None,
+        )
+        if resultado:
+            messages.success(request, f"Presupuesto de {equipo.nombre} para {int(resultado.mes):02d}/{resultado.anio} registrado: {resultado.monto_asignado}.")
+        return redirect("presupuestos")
+    try:
+        anio = int(request.GET.get("anio", hoy.year)); mes = int(request.GET.get("mes", hoy.month))
+    except ValueError:
+        anio, mes = hoy.year, hoy.month
+    equipos = Equipo.objects.filter(activo=True).select_related("area").order_by("area__nombre", "nombre")
+    filas = []
+    for e in equipos:
+        p = PresupuestoMensual.objects.filter(equipo=e, anio=anio, mes=mes).first()
+        filas.append({"equipo": e, "presupuesto": p})
+    return render(request, "web/presupuestos.html", {
+        "filas": filas, "anio": anio, "mes": mes, "equipos": equipos,
+        "anios": range(hoy.year - 1, hoy.year + 2), "meses": range(1, 13),
+    })
+
+
+@rol_requerido(Rol.JEFE_UNIDAD, Rol.JEFE_TALLER, Rol.GERENTE, Rol.JEFE_UNIDAD_ALMACEN)
+def gastos(request):
+    perfil = _perfil(request)
+    hoy = timezone.localdate()
+    equipos = presupuesto_srv.equipos_consultables(perfil).select_related("area").order_by("area__nombre", "nombre")
+    try:
+        anio = int(request.GET.get("anio", hoy.year)); mes = int(request.GET.get("mes", hoy.month))
+    except ValueError:
+        anio, mes = hoy.year, hoy.month
+    equipo_id = request.GET.get("equipo") or (equipos.first().pk if equipos.exists() else None)
+    equipo = equipos.filter(pk=equipo_id).first() if equipo_id else None
+    datos = presupuesto_srv.gasto_por_motivo(equipo, anio, mes) if equipo else None
+    return render(request, "web/gastos.html", {
+        "equipos": equipos, "equipo": equipo, "anio": anio, "mes": mes, "datos": datos,
+        "anios": range(hoy.year - 1, hoy.year + 2), "meses": range(1, 13),
+    })

@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% load web_extras %}
+{% block titulo %}Inicio{% endblock %}
+{% block contenido %}
+<h1 class="h3 mb-0">Hola, {{ user.first_name|default:user.username }}</h1>
+<p class="text-muted">{{ perfil.get_rol_display }} · área {{ perfil.area.nombre }} · {{ hoy|date:"l d/m/Y" }}</p>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card shadow-sm border-primary">
+      <div class="card-header d-flex justify-content-between">Solicitudes pendientes de aprobación en el área <span class="badge text-bg-primary">{{ pendientes|length }}</span></div>
+      <table class="table table-sm mb-0"><tbody>
+        {% for s in pendientes %}<tr><td><a href="{% url 'solicitud_detalle' s.pk %}">#{{ s.pk }}</a></td><td>{{ s.solicitante.get_full_name|default:s.solicitante.username }}</td><td>{{ s.equipo.nombre }}</td><td class="text-muted small text-end">{{ s.fecha_creacion|date:"d/m H:i" }}</td></tr>
+        {% empty %}<tr><td class="text-muted p-3">Nada pendiente. Los jefes de unidad están al día.</td></tr>{% endfor %}
+      </tbody></table>
+      <div class="card-footer"><a href="{% url 'bandeja' %}">Ir a la bandeja →</a> <span class="text-muted small ms-2">Aprobás en reemplazo del jefe de unidad cuando está ausente.</span></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header">Saldo de los equipos del área (este mes)</div>
+      <table class="table table-sm mb-0"><tbody>
+        {% for e, p in equipos %}<tr><td>{{ e.nombre }}</td><td class="text-end">{% if p %}<strong>{{ p.saldo|pesos }}</strong> <span class="text-muted small">de {{ p.monto_asignado|pesos }}</span>{% else %}<span class="text-muted">sin presupuesto</span>{% endif %}</td></tr>{% endfor %}
+      </tbody></table>
+      <div class="card-footer"><a href="{% url 'gastos' %}">Ver gasto por motivo →</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

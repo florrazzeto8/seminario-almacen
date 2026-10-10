@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% load web_extras %}
+{% block titulo %}Gastos{% endblock %}
+{% block contenido %}
+<h1 class="h3 mb-3">Gasto por equipo y motivo</h1>
+<form method="get" class="d-flex gap-2 mb-3 flex-wrap">
+  <select name="equipo" class="form-select w-auto">{% for e in equipos %}<option value="{{ e.pk }}" {% if equipo and e.pk == equipo.pk %}selected{% endif %}>{{ e.nombre }} ({{ e.area.nombre }})</option>{% endfor %}</select>
+  <select name="anio" class="form-select w-auto">{% for a in anios %}<option value="{{ a }}" {% if a == anio %}selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+  <select name="mes" class="form-select w-auto">{% for m in meses %}<option value="{{ m }}" {% if m == mes %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
+  <button class="btn btn-outline-secondary">Consultar</button>
+</form>
+{% if datos %}
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <div class="text-muted small">{{ equipo.nombre }} · {{ mes }}/{{ anio }}</div>
+        <div class="h3 mb-0">{{ datos.total|pesos }} <span class="h6 text-muted">gastado</span></div>
+        {% if datos.presupuesto %}<div class="small">de {{ datos.presupuesto.monto_asignado|pesos }} asignados · saldo <strong>{{ datos.presupuesto.saldo|pesos }}</strong></div>{% else %}<div class="small text-muted">sin presupuesto cargado para el mes</div>{% endif %}
+      </div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-header">Por motivo</div>
+      <table class="table table-sm mb-0"><tbody>
+        {% for f in datos.por_motivo %}<tr><td>{{ f.motivo }}</td><td class="text-end">{{ f.monto|pesos }}</td></tr>{% empty %}<tr><td class="text-muted p-3">Sin gastos en el mes.</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-header">Detalle (entregas y reintegros por devolución)</div>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Fecha</th><th>Solicitud</th><th>Material</th><th>Motivo</th><th class="text-end">Importe</th></tr></thead>
+        <tbody>{% for g in datos.detalle %}
+          <tr><td>{{ g.fecha|date:"d/m H:i" }}</td><td><a href="{% url 'solicitud_detalle' g.item_solicitud.solicitud_id %}">#{{ g.item_solicitud.solicitud_id }}</a></td><td>{{ g.item_solicitud.material.descripcion|truncatechars:45 }}</td><td class="small">{{ g.item_solicitud.get_motivo_display }}</td><td class="text-end {% if g.monto < 0 %}text-success{% endif %}">{{ g.monto|pesos }}</td></tr>
+        {% empty %}<tr><td colspan="5" class="text-muted text-center p-3">Sin movimientos.</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% else %}<div class="alert alert-light border">No tenés equipos para consultar.</div>{% endif %}
+{% endblock %}

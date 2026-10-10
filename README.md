@@ -50,10 +50,11 @@ usuarios del seed (contraseña `almacen123`). Cada rol ve sus pantallas:
 | `ju_mant` | Jefe de unidad | Lo anterior + Bandeja de aprobación con saldo del equipo |
 | `jt_mant`, `gerente_mant` | Jefe de taller / Gerente | Bandeja (reemplazo jerárquico) |
 | `operario_almacen1` | Operario de almacén | Tablero (tomar, lista, entregar con legajo, faltante), Stock, Ingresos, devoluciones |
-| `ju_almacen` | Jefe de unidad de almacén | Lo anterior + ajustes de inventario |
+| `ju_almacen` | Jefe de unidad de almacén | Lo anterior + ajustes de inventario, **carga de presupuestos** y gasto por equipo |
 
-Para que la bandeja muestre saldo, cargar un `PresupuestoMensual` del mes para el equipo
-desde el admin (`/admin/presupuesto/presupuestomensual/`).
+Para que la bandeja muestre saldo, el jefe de unidad de almacén (`ju_almacen`) carga el
+presupuesto del mes en `/almacen/presupuestos/`. Cada rol tiene una pantalla de inicio con
+su resumen, y el tablero del almacén se actualiza solo cada 30 segundos.
 
 La interfaz usa plantillas de Django + Bootstrap 5 + HTMX (cargados desde CDN en el
 prototipo; en la red interna de la planta se sirven como archivos locales). Las vistas

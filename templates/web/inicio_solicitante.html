@@ -1,0 +1,50 @@
+{% extends "base.html" %}{% load web_extras %}
+{% block titulo %}Inicio{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-end mb-4">
+  <div><h1 class="h3 mb-0">Hola, {{ user.first_name|default:user.username }}</h1><p class="text-muted mb-0">{{ perfil.get_rol_display }} · equipo {{ perfil.equipo.nombre }} · {{ hoy|date:"l d/m/Y" }}</p></div>
+  <a class="btn btn-primary btn-lg" href="{% url 'solicitud_nueva' %}">Nueva solicitud</a>
+</div>
+<div class="row g-4">
+  {% if pendientes is not None %}
+  <div class="col-lg-4">
+    <div class="card shadow-sm border-primary h-100">
+      <div class="card-header d-flex justify-content-between">Para aprobar <span class="badge text-bg-primary">{{ pendientes|length }}</span></div>
+      <ul class="list-group list-group-flush">
+        {% for s in pendientes %}<li class="list-group-item d-flex justify-content-between"><a href="{% url 'solicitud_detalle' s.pk %}">#{{ s.pk }}</a><span class="text-muted small">{{ s.solicitante.get_full_name|default:s.solicitante.username }}</span></li>
+        {% empty %}<li class="list-group-item text-muted">Nada pendiente.</li>{% endfor %}
+      </ul>
+      <div class="card-footer"><a href="{% url 'bandeja' %}">Ir a la bandeja →</a></div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="col-lg-{% if pendientes is not None %}5{% else %}8{% endif %}">
+    <div class="card shadow-sm h-100">
+      <div class="card-header">Mis solicitudes en curso</div>
+      <table class="table table-sm mb-0">
+        <tbody>
+        {% for s in abiertas %}<tr><td><a href="{% url 'solicitud_detalle' s.pk %}">#{{ s.pk }}</a></td><td class="small">{% for it in s.items.all %}{{ it.cantidad_solicitada }} × {{ it.material.descripcion|truncatechars:34 }}{% if not forloop.last %}, {% endif %}{% endfor %}</td><td class="text-end"><span class="badge text-bg-{{ s.estado|estado_color }}">{{ s.get_estado_display }}</span></td></tr>
+        {% empty %}<tr><td class="text-muted p-3">No tenés solicitudes en curso.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+      {% if ultimas %}<div class="card-footer small text-muted">Últimas cerradas: {% for s in ultimas %}<a href="{% url 'solicitud_detalle' s.pk %}">#{{ s.pk }}</a> {{ s.get_estado_display|lower }}{% if not forloop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-{% if pendientes is not None %}3{% else %}4{% endif %}">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <div class="text-muted small">Avisos sin leer</div>
+        <div class="display-6">{{ avisos_pendientes|default:0 }}</div>
+        <a href="{% url 'avisos' %}" class="small">Ver avisos</a>
+      </div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="text-muted small">Presupuesto del equipo este mes</div>
+        {% if presupuesto %}<div class="h4 mb-0">{{ presupuesto.saldo|pesos }}</div><div class="small text-muted">disponible de {{ presupuesto.monto_asignado|pesos }}</div>{% else %}<div class="text-muted">Sin presupuesto cargado</div>{% endif %}
+        {% if perfil.rol == "JEFE_UNIDAD" %}<a href="{% url 'gastos' %}" class="small">Ver gasto por motivo</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% load web_extras %}
+{% block titulo %}Inicio{% endblock %}
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-end mb-4">
+  <div><h1 class="h3 mb-0">Almacén · {{ hoy|date:"l d/m/Y" }}</h1><p class="text-muted mb-0">{{ user.get_full_name|default:user.username }} · {{ perfil.get_rol_display }}</p></div>
+  <a class="btn btn-primary btn-lg" href="{% url 'tablero' %}">Abrir el tablero</a>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-2"><div class="card shadow-sm text-center"><div class="card-body"><div class="display-6">{{ aprobadas }}</div><div class="text-muted small">Aprobadas, sin tomar</div></div></div></div>
+  <div class="col-6 col-lg-2"><div class="card shadow-sm text-center border-warning"><div class="card-body"><div class="display-6">{{ en_preparacion }}</div><div class="text-muted small">En preparación</div></div></div></div>
+  <div class="col-6 col-lg-2"><div class="card shadow-sm text-center border-info"><div class="card-body"><div class="display-6">{{ listas }}</div><div class="text-muted small">Listas para retirar</div></div></div></div>
+  <div class="col-6 col-lg-2"><div class="card shadow-sm text-center border-success"><div class="card-body"><div class="display-6">{{ entregadas_hoy }}</div><div class="text-muted small">Entregadas hoy</div></div></div></div>
+  <div class="col-6 col-lg-2"><div class="card shadow-sm text-center {% if vencidas %}border-danger{% endif %}"><div class="card-body"><div class="display-6">{{ vencidas }}</div><div class="text-muted small">Plazo de retiro vencido</div></div></div></div>
+  <div class="col-6 col-lg-2"><div class="card shadow-sm text-center"><div class="card-body"><div class="display-6">{{ avisos_pendientes|default:0 }}</div><div class="text-muted small">Avisos sin leer</div></div></div></div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-header">Materiales en o por debajo del punto de reabastecimiento</div>
+      <table class="table table-sm mb-0"><tbody>
+        {% for m in criticos %}<tr><td class="mono">{{ m.codigo }}</td><td>{{ m.descripcion }}</td><td class="text-end"><strong>{{ m.stock_disponible }}</strong> <span class="text-muted small">/ {{ m.punto_reabastecimiento }}</span></td><td class="text-end"><a class="small" href="{% url 'material_historial' m.pk %}">historial</a></td></tr>
+        {% empty %}<tr><td class="text-muted p-3">Ningún material en nivel crítico.</td></tr>{% endfor %}
+      </tbody></table>
+      <div class="card-footer"><a href="{% url 'stock' %}">Ver todo el stock →</a></div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="list-group shadow-sm">
+      <a class="list-group-item list-group-item-action" href="{% url 'ingreso' %}">Registrar ingreso de material</a>
+      <a class="list-group-item list-group-item-action" href="{% url 'stock' %}">Consultar stock y ubicación</a>
+      {% if perfil.rol == "JEFE_UNIDAD_ALMACEN" %}
+      <a class="list-group-item list-group-item-action d-flex justify-content-between" href="{% url 'presupuestos' %}">Cargar presupuestos del mes {% if sin_presupuesto %}<span class="badge text-bg-warning">{{ sin_presupuesto }} equipos sin cargar</span>{% endif %}</a>
+      <a class="list-group-item list-group-item-action" href="{% url 'gastos' %}">Gasto por equipo y motivo</a>
+      {% endif %}
+      <a class="list-group-item list-group-item-action" href="{% url 'avisos' %}">Avisos</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

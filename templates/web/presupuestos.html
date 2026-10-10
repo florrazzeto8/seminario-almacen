@@ -1,0 +1,43 @@
+{% extends "base.html" %}{% load web_extras %}
+{% block titulo %}Presupuestos{% endblock %}
+{% block contenido %}
+<h1 class="h3 mb-1">Presupuesto mensual por equipo</h1>
+<p class="text-muted">El monto lo asigna Ingeniería; acá se registra y el sistema lo descuenta con cada entrega.</p>
+<div class="row g-4">
+  <div class="col-lg-4">
+    <form method="post" class="card shadow-sm border-primary">{% csrf_token %}
+      <div class="card-header">Registrar / actualizar</div>
+      <div class="card-body">
+        <div class="mb-3"><label class="form-label">Equipo</label><select name="equipo" class="form-select" required>{% for e in equipos %}<option value="{{ e.pk }}">{{ e.nombre }} ({{ e.area.nombre }})</option>{% endfor %}</select></div>
+        <div class="row g-2 mb-3">
+          <div class="col"><label class="form-label">Año</label><select name="anio" class="form-select">{% for a in anios %}<option value="{{ a }}" {% if a == anio %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></div>
+          <div class="col"><label class="form-label">Mes</label><select name="mes" class="form-select">{% for m in meses %}<option value="{{ m }}" {% if m == mes %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></div>
+        </div>
+        <div class="mb-3"><label class="form-label">Monto asignado ($)</label><input name="monto" type="number" step="0.01" min="0" class="form-control" required></div>
+        <button class="btn btn-primary w-100">Guardar</button>
+      </div>
+    </form>
+  </div>
+  <div class="col-lg-8">
+    <form method="get" class="d-flex gap-2 mb-2">
+      <select name="anio" class="form-select form-select-sm w-auto">{% for a in anios %}<option value="{{ a }}" {% if a == anio %}selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+      <select name="mes" class="form-select form-select-sm w-auto">{% for m in meses %}<option value="{{ m }}" {% if m == mes %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
+      <button class="btn btn-outline-secondary btn-sm">Ver</button>
+    </form>
+    <div class="card shadow-sm">
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Equipo</th><th>Área</th><th class="text-end">Asignado</th><th class="text-end">Gastado</th><th class="text-end">Saldo</th></tr></thead>
+        <tbody>
+        {% for f in filas %}
+          <tr class="{% if not f.presupuesto %}table-warning{% endif %}">
+            <td>{{ f.equipo.nombre }}</td><td class="text-muted">{{ f.equipo.area.nombre }}</td>
+            {% if f.presupuesto %}<td class="text-end">{{ f.presupuesto.monto_asignado|pesos }}</td><td class="text-end">{{ f.presupuesto.gasto_neto|pesos }}</td><td class="text-end"><strong>{{ f.presupuesto.saldo|pesos }}</strong></td>
+            {% else %}<td colspan="3" class="text-end text-muted">sin presupuesto cargado para {{ mes }}/{{ anio }}</td>{% endif %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -34,6 +34,9 @@ urlpatterns = [
     path("almacen/stock/", views.stock, name="stock"),
     path("almacen/stock/<int:pk>/", views.material_historial, name="material_historial"),
     path("almacen/ingreso/", views.ingreso, name="ingreso"),
+    # Presupuesto (RF25) y gasto (RF28)
+    path("almacen/presupuestos/", views.presupuestos, name="presupuestos"),
+    path("gastos/", views.gastos, name="gastos"),
     # Avisos
     path("avisos/", views.avisos, name="avisos"),
 ]

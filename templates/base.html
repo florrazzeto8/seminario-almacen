@@ -34,11 +34,16 @@
         {% endif %}
         {% if user.perfil.rol == "JEFE_UNIDAD" or user.perfil.rol == "JEFE_TALLER" or user.perfil.rol == "GERENTE" %}
         <li class="nav-item"><a class="nav-link" href="{% url 'bandeja' %}">Bandeja de aprobación</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'gastos' %}">Gasto del equipo</a></li>
         {% endif %}
         {% if user.perfil.rol == "OPERARIO_ALMACEN" or user.perfil.rol == "JEFE_UNIDAD_ALMACEN" %}
         <li class="nav-item"><a class="nav-link" href="{% url 'tablero' %}">Tablero</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'stock' %}">Stock</a></li>
         <li class="nav-item"><a class="nav-link" href="{% url 'ingreso' %}">Ingresos y ajustes</a></li>
+        {% if user.perfil.rol == "JEFE_UNIDAD_ALMACEN" %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'presupuestos' %}">Presupuestos</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'gastos' %}">Gastos</a></li>
+        {% endif %}
         {% endif %}
         {% if user.is_staff %}<li class="nav-item"><a class="nav-link" href="/admin/">Administración</a></li>{% endif %}
       </ul>
